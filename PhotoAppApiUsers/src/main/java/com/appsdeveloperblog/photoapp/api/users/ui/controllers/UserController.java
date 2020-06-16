@@ -19,6 +19,8 @@ import com.appsdeveloperblog.photoapp.api.users.service.UsersService;
 import com.appsdeveloperblog.photoapp.api.users.shared.UserDto;
 import com.appsdeveloperblog.photoapp.api.users.ui.model.CreateUserRequestModel;
 import com.appsdeveloperblog.photoapp.api.users.ui.model.CreateUserResponseModel;
+import com.appsdeveloperblog.photoapp.api.users.ui.model.UserResponseModel;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping(path = "/users")
@@ -26,27 +28,39 @@ public class UserController {
 
 	@Autowired
 	private Environment env;
-	
+
 	@Autowired
 	private UsersService usersService;
-	
+
 	@GetMapping(path = "/status/check")
 	public String status() {
-		return "working on port "+ env.getProperty("local.server.port") + "with secret key "+env.getProperty("token.secret");
+		return "working on port " + env.getProperty("local.server.port") + "with secret key "
+				+ env.getProperty("token.secret");
 	}
-	
-	@PostMapping(produces = {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE},
-			consumes = {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
-	public  ResponseEntity<CreateUserResponseModel> createUser(@Valid @RequestBody CreateUserRequestModel userRequestModel) {
-		
+
+	@PostMapping(produces = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }, consumes = {
+			MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
+	public ResponseEntity<CreateUserResponseModel> createUser(
+			@Valid @RequestBody CreateUserRequestModel userRequestModel) {
+
 		ModelMapper mapper = new ModelMapper();
 		mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 		UserDto userDetails = mapper.map(userRequestModel, UserDto.class);
 		UserDto createdUser = usersService.createUser(userDetails);
-		
+
 		CreateUserResponseModel returnResponse = mapper.map(createdUser, CreateUserResponseModel.class);
-		
+
 		return ResponseEntity.status(HttpStatus.CREATED).body(returnResponse);
 	}
-	
+
+	@GetMapping(path = "/{userId}", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	public ResponseEntity<UserResponseModel> getUser(@PathVariable("userId") String userId) {
+
+		UserDto userDetails = usersService.getUserByUserId(userId);
+
+		UserResponseModel returnValue = new ModelMapper().map(userDetails, UserResponseModel.class);
+
+		return ResponseEntity.status(HttpStatus.OK).body(returnValue);
+	}
+
 }
